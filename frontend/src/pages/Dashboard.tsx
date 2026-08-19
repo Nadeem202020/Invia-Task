@@ -1,24 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Package, Building2, Boxes, Loader2 } from 'lucide-react';
+import { Package, Building2, Boxes, Loader2, Clock } from 'lucide-react';
 import api from '../api';
 import ProductList from '../components/ProductList';
 import WarehouseList from '../components/WarehouseList';
+import HistoryList from '../components/HistoryList';
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'products' | 'warehouses'>('products');
+  const [activeTab, setActiveTab] = useState<'products' | 'warehouses' | 'history'>('products');
   const [products, setProducts] = useState<any[]>([]);
   const [warehouses, setWarehouses] = useState<any[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [productsRes, warehousesRes] = await Promise.all([
+      const [productsRes, warehousesRes, historyRes] = await Promise.all([
         api.get('/products'),
-        api.get('/warehouses')
+        api.get('/warehouses'),
+        api.get('/inventory/history')
       ]);
       setProducts(productsRes.data);
       setWarehouses(warehousesRes.data);
+      setHistory(historyRes.data);
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -66,6 +70,7 @@ export default function Dashboard() {
   const tabs = [
     { key: 'products' as const, label: 'Products', icon: Package },
     { key: 'warehouses' as const, label: 'Warehouses', icon: Building2 },
+    { key: 'history' as const, label: 'History', icon: Clock },
   ];
 
   return (
@@ -96,11 +101,10 @@ export default function Dashboard() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-              activeTab === tab.key
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${activeTab === tab.key
                 ? 'gradient-btn text-white shadow-lg'
                 : 'glass text-base-300 hover:text-base-100 hover:bg-base-700/40'
-            }`}
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             <span>{tab.label}</span>
@@ -117,8 +121,10 @@ export default function Dashboard() {
           </div>
         ) : activeTab === 'products' ? (
           <ProductList products={products} warehouses={warehouses} onRefresh={fetchData} />
-        ) : (
+        ) : activeTab === 'warehouses' ? (
           <WarehouseList warehouses={warehouses} onRefresh={fetchData} />
+        ) : (
+          <HistoryList history={history} />
         )}
       </div>
     </div>

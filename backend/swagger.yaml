@@ -56,6 +56,25 @@ components:
           $ref: '#/components/schemas/Warehouse'
         product:
           $ref: '#/components/schemas/Product'
+    StockHistory:
+      type: object
+      properties:
+        id:
+          type: string
+        operationType:
+          type: string
+          enum: [ADD, REMOVE, TRANSFER]
+        quantity:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+        product:
+          $ref: '#/components/schemas/Product'
+        sourceWarehouse:
+          $ref: '#/components/schemas/Warehouse'
+        destinationWarehouse:
+          $ref: '#/components/schemas/Warehouse'
     Error:
       type: object
       properties:
@@ -216,6 +235,20 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Inventory'
+        '401':
+          description: Unauthorized
+  /inventory/history:
+    get:
+      summary: Get stock history log
+      responses:
+        '200':
+          description: List of recent stock history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockHistory'
         '401':
           description: Unauthorized
   /inventory/add:
