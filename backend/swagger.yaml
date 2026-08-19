@@ -1,0 +1,349 @@
+openapi: 3.0.0
+info:
+  title: Mini Inventory System API
+  description: API documentation for the Mini Inventory System.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000/api
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sku:
+          type: string
+        inventories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Inventory'
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+    Inventory:
+      type: object
+      properties:
+        id:
+          type: string
+        quantity:
+          type: integer
+        productId:
+          type: string
+        warehouseId:
+          type: string
+        warehouse:
+          $ref: '#/components/schemas/Warehouse'
+        product:
+          $ref: '#/components/schemas/Product'
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message details
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /products:
+    get:
+      summary: Get all products
+      responses:
+        '200':
+          description: List of products with inventory details
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - sku
+              properties:
+                name:
+                  type: string
+                sku:
+                  type: string
+      responses:
+        '201':
+          description: Created product
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Validation error (e.g. duplicate SKU)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+  /warehouses:
+    get:
+      summary: Get all warehouses
+      responses:
+        '200':
+          description: List of warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Warehouse'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create a new warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - code
+              properties:
+                name:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '201':
+          description: Created warehouse
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Warehouse'
+        '400':
+          description: Validation error (e.g. duplicate Code)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+  /inventory:
+    get:
+      summary: Get inventory records
+      parameters:
+        - in: query
+          name: productId
+          schema:
+            type: string
+          required: false
+          description: Filter inventory by product ID
+      responses:
+        '200':
+          description: List of inventory records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Inventory'
+        '401':
+          description: Unauthorized
+  /inventory/add:
+    post:
+      summary: Add stock to a product in a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - warehouseId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                warehouseId:
+                  type: string
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Updated inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+        '400':
+          description: Validation error (e.g. quantity <= 0)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Inventory record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /inventory/remove:
+    post:
+      summary: Remove stock from a product in a warehouse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - warehouseId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                warehouseId:
+                  type: string
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Updated inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inventory'
+        '400':
+          description: Validation error (e.g. Insufficient stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Inventory record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /inventory/transfer:
+    post:
+      summary: Transfer stock between warehouses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - sourceWarehouseId
+                - destinationWarehouseId
+                - quantity
+              properties:
+                productId:
+                  type: string
+                sourceWarehouseId:
+                  type: string
+                destinationWarehouseId:
+                  type: string
+                quantity:
+                  type: integer
+      responses:
+        '200':
+          description: Transfer successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Validation error (e.g. Insufficient stock, same warehouse)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Source or destination inventory not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'

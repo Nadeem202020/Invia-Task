@@ -1,0 +1,73 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  sku         String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  inventories Inventory[]
+  history     StockHistory[]
+}
+
+model Warehouse {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  inventories Inventory[]
+  historySource StockHistory[] @relation("SourceWarehouse")
+  historyDest   StockHistory[] @relation("DestinationWarehouse")
+}
+
+model Inventory {
+  id          String   @id @default(uuid())
+  quantity    Int      @default(0)
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@unique([productId, warehouseId])
+}
+
+enum OperationType {
+  ADD
+  REMOVE
+  TRANSFER
+}
+
+model StockHistory {
+  id                     String   @id @default(uuid())
+  operationType          OperationType
+  quantity               Int
+  timestamp              DateTime @default(now())
+
+  productId              String
+  product                Product  @relation(fields: [productId], references: [id])
+
+  sourceWarehouseId      String?
+  sourceWarehouse        Warehouse? @relation("SourceWarehouse", fields: [sourceWarehouseId], references: [id])
+
+  destinationWarehouseId String?
+  destinationWarehouse   Warehouse? @relation("DestinationWarehouse", fields: [destinationWarehouseId], references: [id])
+}
