@@ -58,6 +58,7 @@ docker compose up -d
    ```bash
    npm run seed
    ```
+   *Note: If `npm run seed` fails with a `Cannot find module '.prisma/client/default'` error, manually generate the Prisma client by running `npx prisma generate` first.*
 6. Start the backend server:
    ```bash
    npm run dev
